@@ -57,8 +57,14 @@ class WeatherTools:
         """Get comprehensive weather data from API."""
         try:
             if "," in location:
-                lat, lon = map(float, location.split(",", maxsplit=1))
-                location_name = f"{lat:.2f},{lon:.2f}"
+                coordinate_parts = [part.strip() for part in location.split(",", maxsplit=1)]
+                try:
+                    lat, lon = map(float, coordinate_parts)
+                except ValueError:
+                    lat, lon = await self._geocode(location)
+                    location_name = location
+                else:
+                    location_name = f"{lat:.2f},{lon:.2f}"
             else:
                 lat, lon = await self._geocode(location)
                 location_name = location

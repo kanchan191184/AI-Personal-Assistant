@@ -44,7 +44,7 @@ personal-assistant/
 Open PowerShell in the project root:
 
 ```powershell
-cd "C:\Users\kanch\Documents\GitHub Projects\code"
+cd "C:\Users\kanch\Documents\GitHub Projects\AI Personal Assistant"
 
 # Create virtual environment
 python -m venv vn_autogen
@@ -94,7 +94,7 @@ $env:MAX_RESULTS = "5"
 $env:DEFAULT_TIMEZONE = "Asia/Kolkata"
 ```
 
-These variables apply only to the current terminal session. The application reads them from `source/configurations.py`.
+These variables apply only to the current terminal session. The application reads them from `source/config.py`.
 
 ### 4. Google API Setup
 
@@ -128,7 +128,7 @@ In the project root, activate the environment and set the API keys for the curre
 $env:OPENAI_API_KEY = "your_new_openai_api_key_here"
 $env:TAVILY_SEARCH_KEY = "your_new_tavily_api_key_here"
 
-uvicorn app:app --host 127.0.0.1 --port 8000
+python -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
 Leave this terminal running.
@@ -138,7 +138,7 @@ Leave this terminal running.
 Open a second PowerShell terminal:
 
 ```powershell
-cd "C:\Users\kanch\Documents\GitHub Projects\code\frontend"
+cd "C:\Users\kanch\Documents\GitHub Projects\AI Personal Assistant\frontend"
 npm.cmd run dev
 ```
 
@@ -149,20 +149,20 @@ Open `http://127.0.0.1:5173/` in your browser. Vite forwards `/chat` requests to
 To serve the compiled React UI directly from FastAPI, build the frontend first:
 
 ```powershell
-cd "C:\Users\kanch\Documents\GitHub Projects\code\frontend"
+cd "C:\Users\kanch\Documents\GitHub Projects\AI Personal Assistant\frontend"
 npm.cmd run build
 ```
 
 Then start the backend from the project root:
 
 ```powershell
-cd "C:\Users\kanch\Documents\GitHub Projects\code"
+cd "C:\Users\kanch\Documents\GitHub Projects\AI Personal Assistant"
 .\vn_autogen\Scripts\Activate.ps1
 
 $env:OPENAI_API_KEY = "your_new_openai_api_key_here"
 $env:TAVILY_SEARCH_KEY = "your_new_tavily_api_key_here"
 
-uvicorn app:app --host 127.0.0.1 --port 8000
+python -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
 Open `http://127.0.0.1:8000/` in your browser. Rebuild the frontend after frontend code changes so the latest JavaScript and CSS files are available to FastAPI.
@@ -278,11 +278,9 @@ sequenceDiagram
 - Time-aware operations with current datetime
 
 ### Calendar Agent
-- Create, update, and delete events with Meet integration
+- Create and delete events with Meet integration
 - Schedule recurring meetings
-- Find free time slots
-- Respond to meeting invitations
-- Bulk event creation
+- List calendars and upcoming events
 - Time-aware scheduling with current datetime
 
 ### Weather Agent
@@ -299,7 +297,7 @@ sequenceDiagram
 
 ## Configuration
 
-All configuration is managed through the `configurations.py` file. Key settings include:
+All configuration is managed through the `source/config.py` file. Key settings include:
 
 - **OpenAI Configuration**: API key, model selection, temperature
 - **Tavily Configuration**: Search API key and result limits
@@ -354,7 +352,7 @@ All operations are logged to:
 1. **Virtual Environment Issues**:
    ```bash
    # Ensure virtual environment is activated
-   which python  # Should point to your venv
+   Get-Command python  # Source should point to vn_autogen\Scripts\python.exe
    ```
 
 2. **Google OAuth Issues**: 

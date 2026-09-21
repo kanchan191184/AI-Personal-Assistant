@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -32,7 +34,13 @@ async def chat(request: ChatRequest):
     if not request.message.strip():
         return ChatResponse(response="Please provide a message.")
 
-    response = await assistant.process_request(request.message)
+    try:
+        response = await asyncio.wait_for(
+            assistant.process_request(request.message),
+            timeout=90,
+        )
+    except asyncio.TimeoutError:
+        response = "The request timed out. Check the backend logs and verify your API credentials and Google authorization."
     return ChatResponse(response=response)
 
 

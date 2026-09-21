@@ -27,5 +27,5 @@ async def create_specialist_agent(
         model_client=model_client,
         tools=tools,
         system_message=system_message,
-        reflect_on_tool_use=True,
+        reflect_on_tool_use=False,
     )

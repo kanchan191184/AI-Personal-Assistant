@@ -45,7 +45,7 @@ def create_model_client() -> OpenAIChatCompletionClient:
 async def create_email_agent(model_client: OpenAIChatCompletionClient) -> AssistantAgent:
     """Create and configure the email assistant agent."""
     async def create_tools():
-        email_creds = get_gmail_service()
+        email_creds = await asyncio.to_thread(get_gmail_service)
         return await GmailTools(email_creds).as_function_tools()
 
     return await create_specialist_agent(

@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from datetime import datetime, timedelta
 from typing import Dict, List
@@ -19,7 +20,7 @@ class CalendarTools:
     async def _get_service(self):
         """Get or create calendar service."""
         if self.service is None:
-            self.service = get_calendar_service()
+            self.service = await asyncio.to_thread(get_calendar_service)
         return self.service
     
     def _parse_input(self, input_str: str) -> str:
@@ -34,12 +35,16 @@ class CalendarTools:
         """List all calendars available in the user's Google Calendar account."""
         try:
             service = await self._get_service()
-            calendars = service.calendarList().list().execute().get('items', [])
+            calendars = await asyncio.to_thread(
+                lambda: service.calendarList().list().execute().get('items', [])
+            )
             summaries = [c['summary'] for c in calendars]
             logger.info(f"Listed {len(summaries)} calendars")
             return "Your calendars:\n" + "\n".join(f"- {s}" for s in summaries)
         except Exception as e:
             logger.error(f"Error listing calendars: {str(e)}")
+            if "invalid_grant" in str(e).lower():
+                return "Google Calendar authorization has expired or been revoked. Please restart the backend and complete the Google authorization in your browser."
             return f"Error listing calendars: {str(e)}"
     
     async def create_calendar(self, input_str: str) -> str:
@@ -49,11 +54,15 @@ class CalendarTools:
             summary, tz = map(str.strip, input_str.split("|"))
             service = await self._get_service()
             calendar = {'summary': summary, 'timeZone': tz}
-            created = service.calendars().insert(body=calendar).execute()
+            created = await asyncio.to_thread(
+                lambda: service.calendars().insert(body=calendar).execute()
+            )
             logger.info(f"Created calendar '{summary}' with ID: {created['id']}")
             return f"Created calendar '{summary}' with ID: {created['id']}"
         except Exception as e:
             logger.error(f"Error creating calendar: {str(e)}")
+            if "invalid_grant" in str(e).lower():
+                return "Google Calendar authorization has expired or been revoked. Please restart the backend and complete the Google authorization in your browser."
             return f"Error creating calendar: {str(e)}"
     
     async def insert_event(self, input_str: str) -> str:
@@ -103,12 +112,14 @@ class CalendarTools:
             
             # Create event
             service = await self._get_service()
-            created = service.events().insert(
-                calendarId="primary",
-                body=event,
-                conferenceDataVersion=1,
-                sendUpdates="all"
-            ).execute()
+            created = await asyncio.to_thread(
+                lambda: service.events().insert(
+                    calendarId="primary",
+                    body=event,
+                    conferenceDataVersion=1,
+                    sendUpdates="all"
+                ).execute()
+            )
             
             # Get meet link
             meet_link = (created.get("conferenceData", {})
@@ -123,6 +134,8 @@ class CalendarTools:
             
         except Exception as e:
             logger.error(f"Error creating event: {str(e)}")
+            if "invalid_grant" in str(e).lower():
+                return "Google Calendar authorization has expired or been revoked. Please restart the backend and complete the Google authorization in your browser."
             return f"Error creating event: {str(e)}"
     
     async def list_events(self, input_str: str = "primary | 10") -> str:
@@ -135,13 +148,15 @@ class CalendarTools:
             service = await self._get_service()
             now = datetime.utcnow().isoformat() + "Z"
             
-            events = service.events().list(
-                calendarId='primary',
-                timeMin=now,
-                maxResults=max_res,
-                singleEvents=True,
-                orderBy="startTime"
-            ).execute().get("items", [])
+            events = await asyncio.to_thread(
+                lambda: service.events().list(
+                    calendarId='primary',
+                    timeMin=now,
+                    maxResults=max_res,
+                    singleEvents=True,
+                    orderBy="startTime"
+                ).execute().get("items", [])
+            )
             
             if not events:
                 logger.info("No upcoming events found")
@@ -160,6 +175,8 @@ class CalendarTools:
             
         except Exception as e:
             logger.error(f"Error listing events: {str(e)}")
+            if "invalid_grant" in str(e).lower():
+                return "Google Calendar authorization has expired or been revoked. Please restart the backend and complete the Google authorization in your browser."
             return f"Error listing events: {str(e)}"
     
     async def delete_event(self, input_str: str) -> str:
@@ -176,13 +193,15 @@ class CalendarTools:
             service = await self._get_service()
             now = datetime.utcnow().isoformat() + "Z"
             
-            events_result = service.events().list(
-                calendarId="primary",
-                timeMin=now,
-                maxResults=50,
-                singleEvents=(scope != "all"),
-                orderBy="startTime" if scope != "all" else None
-            ).execute()
+            events_result = await asyncio.to_thread(
+                lambda: service.events().list(
+                    calendarId="primary",
+                    timeMin=now,
+                    maxResults=50,
+                    singleEvents=(scope != "all"),
+                    orderBy="startTime" if scope != "all" else None
+                ).execute()
+            )
             
             events = events_result.get("items", [])
             
@@ -191,11 +210,13 @@ class CalendarTools:
                     event_id = event["id"]
                     title = event["summary"]
                     
-                    service.events().delete(
-                        calendarId="primary",
-                        eventId=event_id,
-                        sendUpdates="all"
-                    ).execute()
+                    await asyncio.to_thread(
+                        lambda: service.events().delete(
+                            calendarId="primary",
+                            eventId=event_id,
+                            sendUpdates="all"
+                        ).execute()
+                    )
                     
                     scope_text = "(entire series)" if scope == "all" else ""
                     logger.info(f"Deleted event '{title}' {scope_text}")
@@ -206,6 +227,8 @@ class CalendarTools:
             
         except Exception as e:
             logger.error(f"Error deleting event: {str(e)}")
+            if "invalid_grant" in str(e).lower():
+                return "Google Calendar authorization has expired or been revoked. Please restart the backend and complete the Google authorization in your browser."
             return f"Error deleting event: {str(e)}"
         
     async def get_current_datetime(self) -> str:
